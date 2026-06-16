@@ -93,4 +93,4 @@ python main.py
 
 ## Лицензия
 
-[MIT]
+[MIT](LICENSE)
