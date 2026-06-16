@@ -1,0 +1,9 @@
+{
+  "api_id": 0,
+  "api_hash": "",
+  "session_name": "userbot",
+  "channel_title": "New Channel",
+  "channel_about": "",
+  "check_interval": 60,
+  "usernames_file": "usernames.txt"
+}

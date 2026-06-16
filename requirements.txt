@@ -1,0 +1,4 @@
+telethon>=1.36,<2
+aiohttp>=3.9
+certifi>=2024.2.2
+cryptg>=0.4
