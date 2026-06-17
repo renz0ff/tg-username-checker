@@ -1,8 +1,3 @@
-"""Настройки приложения, хранятся в settings.json.
-
-Файл создаётся автоматически и редактируется через меню «Настройки».
-Содержит api_hash, поэтому добавлен в .gitignore.
-"""
 import json
 import os
 
@@ -12,20 +7,21 @@ DEFAULTS = {
     "api_id": 0,
     "api_hash": "",
     "session_name": "userbot",
-    "channel_title": "New Channel",
+    "channel_title": "tag",
     "channel_about": "",
     "check_interval": 60,
+    "claim_interval": 5,
     "usernames_file": "usernames.txt",
 }
 
-# (ключ, подпись в меню, тип) — порядок задаёт нумерацию в настройках
 FIELDS = [
     ("api_id", "API ID", int),
     ("api_hash", "API HASH", str),
     ("session_name", "Имя сессии", str),
-    ("channel_title", "Название канала", str),
+    ("channel_title", "Префикс названия канала", str),
     ("channel_about", "Описание канала", str),
-    ("check_interval", "Интервал проверки, сек", int),
+    ("check_interval", "Темп опроса Fragment, сек", int),
+    ("claim_interval", "Темп захвата при освобождении, сек", int),
     ("usernames_file", "Файл юзернеймов", str),
 ]
 

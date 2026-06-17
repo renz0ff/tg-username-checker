@@ -1,13 +1,5 @@
-"""Точка входа: авторизация Telethon, меню, настройки.
-
-При первом запуске задайте API ID / API HASH через пункт «Настройки»,
-затем «Старт» — Telethon попросит номер телефона и код (придёт в Telegram)
-и создаст файл сессии.
-"""
 import asyncio
-
 from telethon import TelegramClient
-
 from grabber import run as run_grabber
 from settings import FIELDS, Settings
 
@@ -61,6 +53,9 @@ async def settings_menu(settings: Settings) -> None:
             if key == "check_interval" and val < 5:
                 print("Интервал слишком мал, ставлю 5 сек.")
                 val = 5
+            if key == "claim_interval" and val < 1:
+                print("Интервал слишком мал, ставлю 1 сек.")
+                val = 1
             settings.set(key, val)
         else:
             settings.set(key, raw)
@@ -72,7 +67,7 @@ async def settings_menu(settings: Settings) -> None:
 async def main() -> None:
     settings = Settings.load()
     client: TelegramClient | None = None
-    client_creds = None  # (api_id, api_hash), под которые создан client
+    client_creds = None  
 
     while True:
         print("\n========== МЕНЮ ==========")
@@ -97,7 +92,7 @@ async def main() -> None:
                 client_creds = creds
 
             if not client.is_connected():
-                await client.start()  # первый запуск спросит телефон и код
+                await client.start() 
 
             me = await client.get_me()
             handle = f"@{me.username}" if me.username else "(без юзернейма)"

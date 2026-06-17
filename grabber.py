@@ -1,74 +1,83 @@
-"""Основной цикл: мониторинг статусов и захват юзернеймов.
-
-Логика для каждого юзернейма:
-  - на продаже / продан  → убрать из списка;
-  - taken                → продолжать проверять каждый check_interval;
-  - unavailable          → проверить, свободен ли он в самом Telegram;
-                           если да — создать канал и повесить юзернейм,
-                           если нет — оставить в мониторинге.
-"""
 import asyncio
-
 import aiohttp
 from telethon import errors
-from telethon.tl.functions.channels import (
-    CreateChannelRequest,
-    UpdateUsernameRequest,
-)
-
+from telethon.tl.functions.channels import (CreateChannelRequest, UpdateUsernameRequest)
 import fragment
 from settings import Settings
+
+
+async def _create_channel(client, settings: Settings, username: str):
+    """Создаёт один канал под конкретный тег. Возвращает объект канала."""
+    title = f"{settings.get('channel_title')} {username}".strip()
+    interval = settings.get("check_interval")
+    while True:
+        try:
+            result = await client(CreateChannelRequest(
+                title=title,
+                about=settings.get("channel_about"),
+                megagroup=False,
+            ))
+            channel = result.chats[0]
+            print(f"Канал создан для @{username}: «{title}» id={channel.id}")
+            return channel
+        except errors.FloodWaitError as e:
+            wait = max(interval, e.seconds)
+            print(f"  [create] флуд-вейт {e.seconds}s, жду {wait}s")
+            await asyncio.sleep(wait)
 
 
 async def _is_free_on_telegram(client, username: str) -> bool:
     """True, если юзернейм реально свободен в Telegram."""
     try:
         await client.get_entity(username)
-        return False  # сущность нашлась → юзернейм занят
+        return False  
     except errors.UsernameNotOccupiedError:
         return True
     except ValueError:
-        return True   # Telethon не нашёл сущность
+        return True  
     except errors.FloodWaitError:
         raise
     except Exception:
         return False
 
 
-async def _claim(client, settings: Settings, username: str) -> bool:
-    """Создаёт канал и вешает на него юзернейм. True — успех."""
-    interval = settings.get("check_interval")
-    try:
-        result = await client(CreateChannelRequest(
-            title=settings.get("channel_title"),
-            about=settings.get("channel_about"),
-            megagroup=False,
-        ))
-        channel = result.chats[0]
-    except errors.FloodWaitError as e:
-        wait = max(interval, e.seconds)
-        print(f"  [claim] флуд-вейт {e.seconds}s при создании канала, жду {wait}s")
-        await asyncio.sleep(wait)
-        return False
-
-    try:
-        await client(UpdateUsernameRequest(channel, username))
-        print(f"  \u2705 захвачен @{username} (канал id={channel.id})")
-        return True
-    except errors.FloodWaitError as e:
-        wait = max(interval, e.seconds)
-        print(f"  [claim] флуд-вейт {e.seconds}s при установке ника, жду {wait}s")
-        await asyncio.sleep(wait)
-        return False
-    except errors.RPCError as e:
-        print(f"  [claim] не удалось занять @{username}: {e.code} {e.message}")
-        return False
+async def _claim_burst(client, settings: Settings, channel, username: str) -> bool:
+    """Ускоренный захват: вешает ник на уже созданный канал в темпе
+    claim_interval, пока не получится или ник не перехватят/окажется
+    недопустимым. True — успех."""
+    claim_interval = settings.get("claim_interval")
+    while True:
+        try:
+            await client(UpdateUsernameRequest(channel, username))
+            print(f"  ✅ захвачен @{username} (канал id={channel.id})")
+            return True
+        except errors.FloodWaitError as e:
+            wait = max(claim_interval, e.seconds)
+            print(f"  [claim] флуд-вейт {e.seconds}s, жду {wait}s")
+            await asyncio.sleep(wait)
+        except errors.UsernameOccupiedError:
+            print(f"  @{username} перехватили — возвращаюсь к мониторингу")
+            return False
+        except (errors.UsernameInvalidError,
+                errors.UsernamePurchaseAvailableError):
+            print(f"  @{username} недопустим/на продаже — прекращаю")
+            return False
+        except errors.RPCError as e:
+            print(f"  [claim] {e.code} {e.message} — повтор через {claim_interval}s")
+            await asyncio.sleep(claim_interval)
 
 
 async def run(client, settings: Settings, usernames: list[str]):
-    """Гоняет список, пока не опустеет (всё захвачено/выкинуто)."""
-    interval = settings.get("check_interval")
     pending = list(dict.fromkeys(usernames))  # уникальные, порядок сохранён
+
+    # Заранее создаём по одному каналу на каждый тег, привязка по id.
+    print(f"\nСоздаю каналы под {len(pending)} тег(ов)…")
+    channels = {}
+    for username in pending:
+        channels[username] = await _create_channel(client, settings, username)
+
+    # Мониторинг и захват.
+    interval = settings.get("check_interval")
     grabbed: list[str] = []
     cycle = 0
 
@@ -83,7 +92,7 @@ async def run(client, settings: Settings, usernames: list[str]):
                 print(f"@{username}: {status}")
 
                 if status in (fragment.ON_SALE, fragment.SOLD):
-                    print("  → продаётся/продан, убираю из списка")
+                    print("  → продаётся/продан, прекращаю гоняться")
                     continue
 
                 if status == fragment.UNAVAILABLE:
@@ -96,7 +105,10 @@ async def run(client, settings: Settings, usernames: list[str]):
                         continue
 
                     if free:
-                        if await _claim(client, settings, username):
+                        print(f"  @{username} свободен — ускоренный захват")
+                        if await _claim_burst(
+                            client, settings, channels[username], username
+                        ):
                             grabbed.append(username)
                             continue
                     else:
@@ -104,7 +116,7 @@ async def run(client, settings: Settings, usernames: list[str]):
                     still_pending.append(username)
                     continue
 
-                # TAKEN или UNKNOWN → продолжаем мониторить
+                # TAKEN или UNKNOWN → мониторим дальше
                 still_pending.append(username)
 
             pending = still_pending

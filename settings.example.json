@@ -2,8 +2,9 @@
   "api_id": 0,
   "api_hash": "",
   "session_name": "userbot",
-  "channel_title": "New Channel",
+  "channel_title": "tag",
   "channel_about": "",
   "check_interval": 60,
+  "claim_interval": 5,
   "usernames_file": "usernames.txt"
 }
