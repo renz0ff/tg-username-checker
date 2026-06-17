@@ -42,7 +42,7 @@ Fragment» — это **не** гарантия, что ник свободен 
 
 ```bash
 git clone https://github.com/renz0ff/tg-username-checker.git
-cd tg-username-grabber
+cd tg-username-checker
 
 python3 -m venv venv
 source venv/bin/activate          # Windows: venv\Scripts\activate
