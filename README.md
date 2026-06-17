@@ -1,4 +1,4 @@
-# tg-username-grabber
+# tg-username-checker
 
 Telethon-юзербот, который мониторит статусы юзернеймов на
 [fragment.com](https://fragment.com) и автоматически создаёт Telegram-канал
