@@ -41,7 +41,7 @@ Fragment» — это **не** гарантия, что ник свободен 
 ## Установка
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/renz0ff/tg-username-checker.git
 cd tg-username-grabber
 
 python3 -m venv venv
