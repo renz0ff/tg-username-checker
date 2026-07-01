@@ -1,44 +1,19 @@
 # tg-username-checker
 
-Telethon-юзербот, который мониторит статусы юзернеймов на
-[fragment.com](https://fragment.com) и автоматически создаёт Telegram-канал
-с юзернеймом, как только тот становится доступен.
+A Telethon userbot that watches username statuses on
+[fragment.com](https://fragment.com) and creates a Telegram channel with the
+username as soon as it becomes available.
 
-> ⚠️ Работает от имени **вашего аккаунта** (userbot), а не от bot-токена.
-> Массовый «снайпинг» юзернеймов может нарушать Telegram ToS и привести к
-> ограничениям/бану аккаунта. Используйте на свой риск.
+> Warning: this runs as **your personal account** (userbot), not a bot. Mass
+> username sniping can break Telegram's rules and get your account limited or
+> banned. Use at your own risk.
 
-## Как работает
+## Requirements
 
-Для **каждого** юзернейма из `usernames.txt` заранее создаётся **один**
-канал с названием `<префикс> <username>` (например, `tag pavel`), его `id`
-запоминается — все попытки повесить ник идут на этот же канал, без
-пересоздания.
+- Python 3.12
+- `api_id` and `api_hash` — get them at https://my.telegram.org
 
-Дальше для каждого тега крутится автомат:
-
-| Статус на Fragment      | Действие                                                            |
-|-------------------------|---------------------------------------------------------------------|
-| `unavailable`           | проверить, свободен ли в Telegram → если да, ускоренный захват       |
-| `taken`                 | мониторить в обычном темпе `check_interval`                         |
-| на продаже / `sold`     | прекратить гоняться за ником                                         |
-| не распознан            | продолжать мониторить                                                |
-
-**Два темпа.** Опрос Fragment идёт раз в `check_interval` секунд. Как только
-занятый ник освобождается, бот переключается на ускоренный темп
-`claim_interval` и повторяет попытки занять ник, пока не получится или пока
-ник не перехватят. Оба темпа редактируются в «Настройках».
-
-Статус `unavailable` на Fragment означает лишь «не выставлен на продажу на
-Fragment» — это **не** гарантия, что ник свободен в самом Telegram. Поэтому
-перед захватом бот дополнительно спрашивает у Telegram, свободен ли он.
-
-## Требования
-
-- Python **3.12** (на 3.14 у Telethon встречаются зависания сети; версия зафиксирована в `.python-version`).
-- `api_id` / `api_hash` с https://my.telegram.org → API development tools.
-
-## Установка
+## Install
 
 ```bash
 git clone https://github.com/renz0ff/tg-username-checker.git
@@ -49,57 +24,31 @@ source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## Запуск
+## Run
 
 ```bash
 python main.py
 ```
 
-Появится меню:
+Menu:
 
 ```
-1. Старт              — запустить мониторинг и захват
-2. Список юзернеймов  — показать usernames.txt
-3. Настройки          — задать API ID, API HASH и прочие параметры
-0. Выход
+1. Start          - run monitoring and claiming
+2. Username list  - show usernames.txt
+3. Settings       - set API ID, API HASH and other options
+0. Exit
 ```
 
-### Первый запуск
+### First run
 
-1. Открой пункт **3. Настройки** и заполни **API ID** и **API HASH**
-   (со страницы https://my.telegram.org). Там же при желании меняются
-   название/описание канала, интервал проверки и имя файла со списком.
-   Всё сохраняется в `settings.json`.
-2. Вернись и выбери **1. Старт** — Telethon попросит номер телефона и код
-   подтверждения (придёт в Telegram), создаст файл сессии `userbot.session`.
+1. Open **3. Settings** and fill in **API ID** and **API HASH**.
+2. Go back and pick **1. Start** — Telethon will ask for your phone number
+   and the confirmation code, then create the session file
+   `userbot.session`.
 
-Список целей — в `usernames.txt`, по одному нику на строку (без `@`),
-строки с `#` игнорируются. Остановить мониторинг — `Ctrl+C`.
+Usernames to track go in `usernames.txt`, one per line (no `@`); lines
+starting with `#` are ignored.
 
-## Настройки (`settings.json`)
-
-| Ключ             | Описание                                      |
-|------------------|-----------------------------------------------|
-| `api_id`         | API ID с my.telegram.org                      |
-| `api_hash`       | API HASH с my.telegram.org                    |
-| `session_name`   | имя файла сессии                              |
-| `channel_title`  | префикс названия канала (итог: `префикс ник`) |
-| `channel_about`  | описание канала                               |
-| `check_interval` | темп опроса Fragment, сек                     |
-| `claim_interval` | темп захвата при освобождении ника, сек       |
-| `usernames_file` | путь к файлу со списком                       |
-
-## Замечания и лимиты
-
-- Канал создаётся **на каждый** тег из списка ещё до мониторинга. Помни о
-  суточном лимите Telegram на создание каналов — длинный список упрётся в него.
-- Без Telegram Premium число публичных ссылок на аккаунт ограничено
-  (порядка 10), создание каналов в сутки тоже лимитировано.
-- При частых запросах Telegram возвращает `FloodWaitError` со своим временем
-  ожидания — бот его соблюдает (`max(check_interval, flood_wait)`).
-- Если Fragment поменяет вёрстку, правится `_extract_status_text` в
-  `fragment.py`.
-
-## Лицензия
+## License
 
 [MIT](LICENSE)

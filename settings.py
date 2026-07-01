@@ -17,12 +17,12 @@ DEFAULTS = {
 FIELDS = [
     ("api_id", "API ID", int),
     ("api_hash", "API HASH", str),
-    ("session_name", "Имя сессии", str),
-    ("channel_title", "Префикс названия канала", str),
-    ("channel_about", "Описание канала", str),
-    ("check_interval", "Темп опроса Fragment, сек", int),
-    ("claim_interval", "Темп захвата при освобождении, сек", int),
-    ("usernames_file", "Файл юзернеймов", str),
+    ("session_name", "Session name", str),
+    ("channel_title", "Channel title prefix", str),
+    ("channel_about", "Channel description", str),
+    ("check_interval", "Fragment poll interval, sec", int),
+    ("claim_interval", "Claim interval on release, sec", int),
+    ("usernames_file", "Usernames file", str),
 ]
 
 
@@ -38,7 +38,7 @@ class Settings:
                 with open(SETTINGS_FILE, encoding="utf-8") as f:
                     data.update(json.load(f))
             except (json.JSONDecodeError, OSError) as e:
-                print(f"[settings] не удалось прочитать {SETTINGS_FILE}: {e}")
+                print(f"[settings] could not read {SETTINGS_FILE}: {e}")
         return cls(data)
 
     def save(self) -> None:
@@ -53,5 +53,5 @@ class Settings:
 
     @property
     def is_configured(self) -> bool:
-        """True, если заданы API ID и API HASH."""
+        # True once API ID and API HASH are set.
         return bool(self._data.get("api_id")) and bool(self._data.get("api_hash"))

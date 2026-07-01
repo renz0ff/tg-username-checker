@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Telethon session files
+*.session
+*.session-journal
+
+# Local settings / secrets
+settings.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

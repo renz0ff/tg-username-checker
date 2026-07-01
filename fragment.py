@@ -16,11 +16,11 @@ HEADERS = {
 
 _SSL_CTX = ssl.create_default_context(cafile=certifi.where())
 
-UNAVAILABLE = "unavailable" 
-TAKEN = "taken"              
-ON_SALE = "on_sale"       
-SOLD = "sold"               
-UNKNOWN = "unknown"         
+UNAVAILABLE = "unavailable"
+TAKEN = "taken"
+ON_SALE = "on_sale"
+SOLD = "sold"
+UNKNOWN = "unknown"
 
 _STATUS_RE = re.compile(
     r'tm-section-header-status[^>]*>\s*([^<]+?)\s*<',
@@ -29,7 +29,7 @@ _STATUS_RE = re.compile(
 
 
 def _extract_status_text(html: str) -> str:
-    """Достаёт текст статуса со страницы Fragment."""
+    # Pull the status text out of a Fragment page.
     m = _STATUS_RE.search(html)
     if m:
         return m.group(1).strip()
@@ -43,7 +43,7 @@ def _classify(text: str) -> str:
     t = text.lower()
     if not t:
         return UNKNOWN
-    if "unavailable" in t:       
+    if "unavailable" in t:
         return UNAVAILABLE
     if "sold" in t:
         return SOLD
@@ -65,7 +65,7 @@ async def check_status(session: aiohttp.ClientSession, username: str) -> str:
                 return UNKNOWN
             html = await resp.text()
     except Exception as e:
-        print(f"[fragment] @{username}: ошибка запроса — {e}")
+        print(f"[fragment] @{username}: request failed - {e}")
         return UNKNOWN
 
     return _classify(_extract_status_text(html))
